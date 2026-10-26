@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model PlatformSettings {
+  id           String   @id @default(uuid())
+  settingKey   String   @unique // e.g., "LUGGAGE_PRICE_PER_BAG"
+  settingValue String   // e.g., "500"
+  updatedAt    DateTime @updatedAt
+}
+
+model AdminAccount {
+  id         String   @id @default(uuid())
+  office     String
+  username   String   @unique
+  credential String
+  role       String
+  createdAt  DateTime @default(now())
+}
+
+model CouncilMember {
+  id                     String   @id
+  name                   String
+  category               String
+  role                   String
+  contact                String
+  monthlyAttendanceScore Float    @default(0.0)
+  consecutiveFailures    Int      @default(0)
+  standingStatus         String   @default("Active")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model Student {
+  id        String   @id @default(uuid())
+  name      String
+  regNo     String   @unique
+  hall      String
+  floor     String
+  contact   String
+  createdAt DateTime @default(now())
+}
+
+model Certificate {
+  id            String   @id @default(uuid())
+  status        String   @default("Valid")
+  createdAt     DateTime @default(now())
+  description   String
+  issuedBy      String   @default("Vice Chairman Office")
+  recipientName String
+}
+
+model WelfareApplication {
+  id          String   @id @default(uuid())
+  type        String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  description String
+  reference   String   @unique
+  regNo       String
+  studentName String
+}
+
+model PickupRequest {
+  id          String   @id @default(uuid())
+  type        String
+  destination String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  fee         Float
+  reference   String   @unique
+  regNo       String
+  studentName String
+  updatedAt   DateTime @updatedAt
+}
+
+model Donation {
+  id           String   @id @default(uuid())
+  amount       Float?
+  dateReceived DateTime @default(now())
+  donorName    String
+  item         String?
+  loggedBy     String
+}
+
+model TransactionLog {
+  id          String   @id @default(uuid())
+  reference   String   @unique
+  studentName String
+  amount      Float
+  purpose     String
+  date        DateTime @default(now())
+  receiptSent Boolean  @default(false)
+}
+
+model MissingItem {
+  id          String   @id @default(uuid())
+  itemName    String
+  category    String
+  location    String
+  description String
+  status      String   @default("UNCLAIMED")
+  claimedBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  memoName  String
+  title     String
+  signedBy  String
+  year      Int
+  fileLink  String
+  createdAt DateTime @default(now())
+}
+
+model PaymentReceipt {
+  id         String   @id @default(uuid())
+  student    String
+  amount     Float
+  purpose    String
+  receiptRef String   @unique
+  date       DateTime @default(now())
+}
+
+model DisciplinaryRecord {
+  id                 String   @id @default(uuid())
+  studentName        String
+  regNo              String
+  offenseDescription String
+  status             String   @default("Booked")
+  actionDate         DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model ChairmanSuggestion {
+  id             String   @id @default(uuid())
+  targetOffice   String
+  suggestionText String
+  status         String   @default("Pending Review")
+  date           DateTime @default(now())
+}

@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { updateLuggagePrice } from "@/app/actions/settings";
+import { logout, getSessionRole } from "@/app/actions/auth";
 
 export default function VcmDashboardPage() {
+  const router = useRouter();
+  
+  // Auth state
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<"certificates" | "luggage">("certificates");
   const [loading, setLoading] = useState(false);
   
@@ -17,6 +24,25 @@ export default function VcmDashboardPage() {
     { id: "LUSC-LUG-9A2X1", name: "Ifeanyi Osinachi", bags: 2, status: "Stored", date: "Oct 19, 2026" },
     { id: "LUSC-LUG-4B8Y7", name: "David Adeleke", bags: 1, status: "Awaiting Drop-off", date: "Oct 19, 2026" },
   ];
+
+  // Fetch the actual role from the JWT on mount
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const role = await getSessionRole();
+        setUserRole(role || "staff"); 
+      } catch (err) {
+        console.error("Failed to fetch role, defaulting to staff", err);
+        setUserRole("staff"); 
+      }
+    };
+    fetchRole();
+  }, []);
+
+  const handleLogout = async () => {
+    await logout(); 
+    router.push("/admin/login");
+  };
 
   const handleUpdatePrice = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,16 +62,34 @@ export default function VcmDashboardPage() {
     <div className="min-h-screen bg-[#0D0D0D] text-gray-100 font-sans p-6 md:p-8 selection:bg-[#C89B59] selection:text-black">
       <div className="max-w-[1400px] mx-auto space-y-6">
         
-        {/* Header */}
+        {/* Dynamic Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-[#141414] border border-[#6B5A21]/40 rounded-3xl p-5 px-6 shadow-2xl">
           <div>
             <div className="flex items-center space-x-2 text-xs text-gray-400 mb-1">
-              <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
-                ← Back to Central Hub
-              </Link>
+              
+              {/* Bulletproof Conditional Rendering */}
+              {userRole === null ? (
+                <span className="text-gray-600 font-bold flex items-center gap-2">
+                  <span className="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></span>
+                  Checking Auth...
+                </span>
+              ) : userRole === "superadmin" ? (
+                <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
+                  ← Back to Central Hub
+                </Link>
+              ) : (
+                <button 
+                  onClick={handleLogout} 
+                  className="text-red-400 font-bold hover:underline flex items-center gap-1"
+                >
+                  ← Log Out
+                </button>
+              )}
+
               <span>/</span>
               <span className="text-gray-300">Vice Chairman</span>
             </div>
+            
             <h1 className="text-2xl font-black text-white tracking-tight">
               Vice Chairman (VCM) Portal
             </h1>

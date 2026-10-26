@@ -1,25 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { logout, getSessionRole } from "@/app/actions/auth"; 
 
 export default function GenSecDashboardPage() {
+  const router = useRouter();
+  
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const role = await getSessionRole();
+        setUserRole(role || "staff"); 
+      } catch (err) {
+        setUserRole("staff");
+      }
+    };
+    fetchRole();
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/admin/login");
+  };
 
   return (
     <div className="min-h-screen bg-[#0D0D0D] text-gray-100 font-sans p-6 md:p-8 selection:bg-[#C89B59] selection:text-black">
       <div className="max-w-[1400px] mx-auto space-y-6">
         
-        {/* Header */}
+        {/* Dynamic Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-[#141414] border border-[#6B5A21]/40 rounded-3xl p-5 px-6 shadow-2xl">
           <div>
             <div className="flex items-center space-x-2 text-xs text-gray-400 mb-1">
-              <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
-                ← Back to Central Hub
-              </Link>
+              
+              {/* Conditional Auth Rendering */}
+              {userRole === null ? (
+                <span className="text-gray-600 font-bold flex items-center gap-2">
+                  <span className="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></span>
+                  Checking Auth...
+                </span>
+              ) : userRole === "superadmin" ? (
+                <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
+                  ← Back to Central Hub
+                </Link>
+              ) : (
+                <button 
+                  onClick={handleLogout} 
+                  className="text-red-400 font-bold hover:underline flex items-center gap-1"
+                >
+                  ← Log Out
+                </button>
+              )}
+
               <span>/</span>
               <span className="text-gray-300">General Secretary</span>
             </div>
+            
             <h1 className="text-2xl font-black text-white tracking-tight">
               General Secretary (GenSec) Office
             </h1>
@@ -27,6 +67,7 @@ export default function GenSecDashboardPage() {
               Official memos, executive minutes, and signed document repository.
             </p>
           </div>
+
           <span className="bg-[#124642]/40 text-emerald-300 border border-[#124642] text-xs px-3.5 py-1.5 rounded-full font-bold flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             Office Scope: /admin/gensec

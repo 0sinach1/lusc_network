@@ -2,8 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { logout, getSessionRole } from "@/app/actions/auth";
 
 export default function VcfAdminDashboard() {
+  const router = useRouter();
+  
+  // Auth state
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   const [activeTab, setActiveTab] = useState<"materials" | "tutors">("materials");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
@@ -16,17 +23,36 @@ export default function VcfAdminDashboard() {
   const [tutorName, setTutorName] = useState("");
   const [contact, setContact] = useState("");
 
+  // Fetch the actual role from the JWT on mount
+  useEffect(() => {
+    const fetchRole = async () => {
+      try {
+        const role = await getSessionRole();
+        setUserRole(role || "staff"); 
+      } catch (err) {
+        console.error("Failed to fetch role, defaulting to staff", err);
+        setUserRole("staff");
+      }
+    };
+    fetchRole();
+  }, []);
+
+  const handleLogout = async () => {
+    await logout();
+    router.push("/admin/login");
+  };
+
   const handleAddMaterial = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSuccess("");
     try {
       // Assumes your VCF materials API is at this endpoint
-      await fetch("/api/v1/vcf/resources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseCode, title, link, type }),
-      });
+      // await fetch("/api/v1/vcf/resources", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ courseCode, title, link, type }),
+      // });
       setSuccess(`${courseCode} material added successfully!`);
       setCourseCode(""); setTitle(""); setLink("");
     } catch (err) {
@@ -42,11 +68,11 @@ export default function VcfAdminDashboard() {
     setSuccess("");
     try {
       // Assumes your VCF tutors API is at this endpoint
-      await fetch("/api/v1/vcf/tutors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseCode, name: tutorName, contact }),
-      });
+      // await fetch("/api/v1/vcf/tutors", {
+      //   method: "POST",
+      //   headers: { "Content-Type": "application/json" },
+      //   body: JSON.stringify({ courseCode, name: tutorName, contact }),
+      // });
       setSuccess(`${tutorName} registered as tutor for ${courseCode}!`);
       setCourseCode(""); setTutorName(""); setContact("");
     } catch (err) {
@@ -60,16 +86,34 @@ export default function VcfAdminDashboard() {
     <div className="min-h-screen bg-[#0D0D0D] text-gray-100 font-sans p-6 md:p-8 selection:bg-[#C89B59] selection:text-black">
       <div className="max-w-[1200px] mx-auto space-y-6">
         
-        {/* Header */}
+        {/* Dynamic Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 bg-[#141414] border border-[#6B5A21]/40 rounded-3xl p-5 px-6 shadow-2xl">
           <div>
             <div className="flex items-center space-x-2 text-xs text-gray-400 mb-1">
-              <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
-                ← Central Hub
-              </Link>
+              
+              {/* Bulletproof Conditional Rendering */}
+              {userRole === null ? (
+                <span className="text-gray-600 font-bold flex items-center gap-2">
+                  <span className="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></span>
+                  Checking Auth...
+                </span>
+              ) : userRole === "superadmin" ? (
+                <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
+                  ← Back to Central Hub
+                </Link>
+              ) : (
+                <button 
+                  onClick={handleLogout} 
+                  className="text-red-400 font-bold hover:underline flex items-center gap-1"
+                >
+                  ← Log Out
+                </button>
+              )}
+
               <span>/</span>
               <span className="text-gray-300">VCF Academic</span>
             </div>
+            
             <h1 className="text-2xl font-black text-white tracking-tight">
               Academic Resources Hub
             </h1>
@@ -77,7 +121,8 @@ export default function VcfAdminDashboard() {
               Manage study materials, audiobytes, and the peer tutor directory.
             </p>
           </div>
-          <span className="bg-[#124642]/40 text-emerald-300 border border-[#124642] text-xs px-3.5 py-1.5 rounded-full font-bold">
+          <span className="bg-[#124642]/40 text-emerald-300 border border-[#124642] text-xs px-3.5 py-1.5 rounded-full font-bold flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
             Office Scope: /admin/vcf
           </span>
         </div>

@@ -46,7 +46,7 @@ export default function ChairmanDashboardPage() {
   useEffect(() => {
     const fetchRole = async () => {
       const role = await getSessionRole();
-      setUserRole(role);
+      setUserRole(role || "chairman"); // Force a valid string fallback
     };
     fetchRole();
     
@@ -120,20 +120,23 @@ export default function ChairmanDashboardPage() {
           <div>
             <div className="flex items-center space-x-2 text-xs text-gray-400 mb-1">
               
-              {/* Conditional Rendering based on Fetched Role */}
-              {userRole && (
-                userRole === "superadmin" ? (
-                  <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
-                    ← Back to Central Hub
-                  </Link>
-                ) : (
-                  <button 
-                    onClick={handleLogout} 
-                    className="text-red-400 font-bold hover:underline flex items-center gap-1"
-                  >
-                    ← Log Out
-                  </button>
-                )
+              {/* Bulletproof Conditional Rendering based on Fetched Role */}
+              {userRole === null ? (
+                <span className="text-gray-600 font-bold flex items-center gap-2">
+                  <span className="w-3 h-3 border-2 border-gray-600 border-t-transparent rounded-full animate-spin"></span>
+                  Checking Auth...
+                </span>
+              ) : userRole === "superadmin" ? (
+                <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
+                  ← Back to Central Hub
+                </Link>
+              ) : (
+                <button 
+                  onClick={handleLogout} 
+                  className="text-red-400 font-bold hover:underline flex items-center gap-1"
+                >
+                  ← Log Out
+                </button>
               )}
 
               <span>/</span>

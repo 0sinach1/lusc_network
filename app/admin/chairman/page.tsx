@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { logout, getSessionRole } from "@/app/actions/auth"; // Imported both actions
 
 interface DisciplinaryRecord {
   id: string;
@@ -19,6 +21,11 @@ interface ExecutiveDirective {
 }
 
 export default function ChairmanDashboardPage() {
+  const router = useRouter();
+
+  // Initialize as null to prevent UI flashing before the role is confirmed
+  const [userRole, setUserRole] = useState<string | null>(null); 
+
   const [activeTab, setActiveTab] = useState<"disciplinary" | "directives">("disciplinary");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
@@ -35,11 +42,25 @@ export default function ChairmanDashboardPage() {
   const [directiveContent, setDirectiveContent] = useState("");
   const [directives, setDirectives] = useState<ExecutiveDirective[]>([]);
 
-  // Fetch initial data (Mocked or connect to your API)
+  // Fetch the actual role from the JWT on mount
   useEffect(() => {
+    const fetchRole = async () => {
+      const role = await getSessionRole();
+      setUserRole(role);
+    };
+    fetchRole();
+    
     // Example: fetch('/api/v1/chairman/records')...
   }, []);
 
+  const handleLogout = async () => {
+    // 1. Call the server action to destroy the JWT cookie
+    await logout(); 
+    
+    // 2. Redirect back to the login screen
+    router.push("/admin/login");
+  };
+  
   const handleLogBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -98,12 +119,27 @@ export default function ChairmanDashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-4 bg-[#141414] border border-[#6B5A21]/40 rounded-3xl p-5 px-6 shadow-2xl">
           <div>
             <div className="flex items-center space-x-2 text-xs text-gray-400 mb-1">
-              <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
-                ← Back to Central Hub
-              </Link>
+              
+              {/* Conditional Rendering based on Fetched Role */}
+              {userRole && (
+                userRole === "superadmin" ? (
+                  <Link href="/admin" className="text-[#C89B59] font-bold hover:underline">
+                    ← Back to Central Hub
+                  </Link>
+                ) : (
+                  <button 
+                    onClick={handleLogout} 
+                    className="text-red-400 font-bold hover:underline flex items-center gap-1"
+                  >
+                    ← Log Out
+                  </button>
+                )
+              )}
+
               <span>/</span>
               <span className="text-gray-300">Executive Oversight</span>
             </div>
+            
             <h1 className="text-2xl font-black text-white tracking-tight">
               Chairman & Revolutionary Squad
             </h1>
